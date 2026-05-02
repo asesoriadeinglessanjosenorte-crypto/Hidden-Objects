@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Digital Water Doodle</title>
+    <style>
+        body { 
+            background: #1a1a1a; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        #main-frame {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 90vw; 
+            height: 80vh; 
+        }
+
+        #canvas-container { 
+            position: relative; 
+            line-height: 0;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 10px solid #333; 
+            border-radius: 8px;
+            background: #000;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .bg-img { 
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+            width: auto;
+            height: auto;
+            z-index: 1;
+        }
+
+        #doodleCanvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            z-index: 2;
+            cursor: crosshair;
+            max-width: 100%;
+            max-height: 80vh;
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: #444;
+            border: 2px solid #666;
+            color: white;
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-arrow:hover {
+            background: #666;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        #prevArrow { left: 0; }
+        #nextArrow { right: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="main-frame">
+        <button id="prevArrow" class="nav-arrow" onclick="changePage(-1)">&#10094;</button>
+        
+        <div id="canvas-container">
+            <!-- Hidden color image layer -->
+            <img src="" id="colorImage" class="bg-img">
+            <!-- Reveal canvas layer -->
+            <canvas id="doodleCanvas"></canvas>
+        </div>
+
+        <button id="nextArrow" class="nav-arrow" onclick="changePage(1)">&#10095;</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('doodleCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorImg = document.getElementById('colorImage');
+        const blankImg = new Image(); 
+
+        // UPDATED: Added doodle3_color.png to the sequence
+        const drawings = [
+            { color: 'doodle_color.png', blank: 'Blank.png' },
+            { color: 'doodle2_color.png', blank: 'Blank.png' },
+            { color: 'doodle3_color.png', blank: 'Blank.png' }
+        ];
+
+        let currentIndex = 0;
+
+        function loadDrawing(index) {
+            const drawing = drawings[index];
+            
+            // Set the bottom color image
+            colorImg.src = drawing.color;
+
+            // Load the top blank white image
+            blankImg.src = drawing.blank;
+
+            blankImg.onload = function() {
+                const imgW = blankImg.naturalWidth;
+                const imgH = blankImg.naturalHeight;
+
+                canvas.width = imgW;
+                canvas.height = imgH;
+
+                // Draw the white mask normally first
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(blankImg, 0, 0, imgW, imgH);
+                
+                // Set to 'erase' mode for mouse/touch movement
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+            };
+        }
+
+        function changePage(direction) {
+            currentIndex += direction;
+
+            if (currentIndex >= drawings.length) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = drawings.length - 1;
+
+            loadDrawing(currentIndex);
+        }
+
+        function wash(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 50, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Interaction listeners
+        canvas.addEventListener('mousemove', (e) => { if(e.buttons === 1) wash(e); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); wash(e); }, {passive: false});
+        canvas.addEventListener('mousedown', (e) => { wash(e); });
+        canvas.addEventListener('touchstart', (e) => { wash(e); });
+
+        // Double click to reset the current blank page
+        window.addEventListener('dblclick', () => { loadDrawing(currentIndex); });
+
+        // Run the first scene on startup
+        loadDrawing(0);
+    </script>
+</body>
+</html>
