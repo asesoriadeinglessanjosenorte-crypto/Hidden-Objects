@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Digital Water Doodle</title>
     <style>
-        /* All CSS must stay inside these style tags */
         body { 
             background: #1a1a1a; 
             display: flex; 
@@ -25,6 +24,7 @@
             justify-content: center; 
             width: 100vw; 
             height: 100vh; 
+            background: #1a1a1a;
         } 
 
         #canvas-container { 
@@ -34,7 +34,7 @@
             border: 8px solid #333; 
             border-radius: 8px; 
             background: #000; 
-            max-width: 85%; 
+            max-width: 90%; 
             max-height: 90%; 
         } 
 
@@ -43,7 +43,7 @@
             width: auto; 
             height: auto; 
             max-width: 100%; 
-            max-height: 85vh; 
+            max-height: 80vh; 
             z-index: 1; 
         } 
 
@@ -63,7 +63,7 @@
             transform: translateY(-50%); 
             z-index: 10; 
             background: rgba(68, 68, 68, 0.8); 
-            border: 2px solid #666; 
+            border: none; 
             color: white; 
             font-size: 2rem; 
             width: 50px; 
@@ -74,14 +74,14 @@
             align-items: center; 
             justify-content: center; 
             user-select: none; 
-            border: none;
         } 
 
         #prevArrow { left: 10px; } 
         #nextArrow { right: 10px; } 
 
+        /* Adjusts for landscape to give more room */
         @media screen and (orientation: landscape) and (max-height: 500px) { 
-            #canvas-container { border: 2px solid #333; max-height: 95vh; } 
+            #canvas-container { border: 4px solid #333; } 
             .nav-arrow { width: 40px; height: 40px; font-size: 1.5rem; } 
         }
     </style>
@@ -103,43 +103,37 @@
         const canvas = document.getElementById('doodleCanvas');
         const ctx = canvas.getContext('2d');
         const colorImg = document.getElementById('colorImage');
+        const mainFrame = document.getElementById('main-frame');
 
         const drawings = [
-            { color: 'doodle_color.png', number: "1" },
-            { color: 'doodle2_color.png', number: "2" },
-            { color: 'doodle3_color.png', number: "3" }
+            { color: 'doodle_color.png' },
+            { color: 'doodle2_color.png' },
+            { color: 'doodle3_color.png' }
         ];
 
         let currentIndex = 0;
 
+        // 1. Function to go Full Screen (Hides the browser bar)
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                mainFrame.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen: ${err.message}`);
+                });
+            }
+        }
+
         function loadDrawing(index) {
             const drawing = drawings[index];
             colorImg.src = drawing.color;
-
-            // Wait for image to load to get dimensions
-            colorImg.onload = function() {
-                initCanvas(drawing.number);
-            };
+            colorImg.onload = () => initCanvas();
         }
 
-        function initCanvas(number) {
-            // Set internal resolution to match displayed size of the image
+        function initCanvas() {
             canvas.width = colorImg.clientWidth;
             canvas.height = colorImg.clientHeight;
-
-            // Reset composite to draw the white "cover"
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw hint number
-            ctx.fillStyle = "#cccccc"; 
-            ctx.font = `bold ${canvas.height / 3}px sans-serif`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(number, canvas.width / 2, canvas.height / 2);
-            
-            // Set up erase mode
             ctx.globalCompositeOperation = 'destination-out';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
@@ -153,6 +147,9 @@
         }
 
         function wash(e) {
+            // Trigger full screen on the first interaction
+            toggleFullScreen();
+
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -165,175 +162,16 @@
             ctx.fill();
         }
 
-        // Event Listeners
         canvas.addEventListener('mousemove', (e) => { if(e.buttons === 1) wash(e); });
         canvas.addEventListener('touchmove', (e) => { e.preventDefault(); wash(e); }, {passive: false});
         canvas.addEventListener('mousedown', wash);
         canvas.addEventListener('touchstart', wash);
 
-        // Recalculate if the window is resized (crucial for mobile rotation)
-        window.addEventListener('resize', () => initCanvas(drawings[currentIndex].number));
+        window.addEventListener('resize', () => {
+            // Re-init canvas when exiting/entering full screen to keep sizes correct
+            setTimeout(initCanvas, 100); 
+        });
 
-        // Initialize
-        loadDrawing(0);
-    </script>
-</body>
-</html>
-            line-height: 0; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
-            border: 8px solid #333; 
-            border-radius: 8px; 
-            background: #000; 
-            max-width: 85%; 
-            max-height: 90%; 
-        } 
-
-        .bg-img { 
-            display: block; 
-            width: auto; 
-            height: auto; 
-            max-width: 100%; 
-            max-height: 85vh; 
-            z-index: 1; 
-        } 
-
-        #doodleCanvas { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            z-index: 2; 
-            cursor: crosshair; 
-        } 
-
-        .nav-arrow { 
-            position: absolute; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            z-index: 10; 
-            background: rgba(68, 68, 68, 0.8); 
-            border: 2px solid #666; 
-            color: white; 
-            font-size: 2rem; 
-            width: 50px; 
-            height: 50px; 
-            cursor: pointer; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            user-select: none; 
-        } 
-
-        #prevArrow { left: 10px; } 
-        #nextArrow { right: 10px; } 
-
-        @media screen and (orientation: landscape) and (max-height: 500px) { 
-            #canvas-container { 
-                border: 2px solid #333; 
-                max-height: 95vh; 
-            } 
-            .nav-arrow { 
-                width: 40px; 
-                height: 40px; 
-                font-size: 1.5rem; 
-            } 
-        }
-    </style>
-</head>
-<body>
-
-    <div id="main-frame">
-        <button id="prevArrow" class="nav-arrow" onclick="changePage(-1)">&#10094;</button>
-        
-        <div id="canvas-container">
-            <img src="" id="colorImage" class="bg-img">
-            <canvas id="doodleCanvas"></canvas>
-        </div>
-
-        <button id="nextArrow" class="nav-arrow" onclick="changePage(1)">&#10095;</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('doodleCanvas');
-        const ctx = canvas.getContext('2d');
-        const colorImg = document.getElementById('colorImage');
-
-        const drawings = [
-            { color: 'doodle_color.png', number: "1" },
-            { color: 'doodle2_color.png', number: "2" },
-            { color: 'doodle3_color.png', number: "3" }
-        ];
-
-        let currentIndex = 0;
-
-        function loadDrawing(index) {
-            const drawing = drawings[index];
-            colorImg.src = drawing.color;
-
-            // Using a slight timeout or waiting for layout to ensure clientWidth is calculated
-            colorImg.onload = function() {
-                setupCanvas(drawing.number);
-            };
-        }
-
-        function setupCanvas(number) {
-            // Set internal resolution to match displayed size
-            canvas.width = colorImg.clientWidth;
-            canvas.height = colorImg.clientHeight;
-
-            // Fill with "opaque" layer (white)
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw the hint number
-            ctx.fillStyle = "#cccccc"; 
-            ctx.font = `bold ${canvas.height / 3}px sans-serif`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(number, canvas.width / 2, canvas.height / 2);
-            
-            // Set up the "erasing" brush
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-        }
-
-        function changePage(direction) {
-            currentIndex += direction;
-            if (currentIndex >= drawings.length) currentIndex = 0;
-            if (currentIndex < 0) currentIndex = drawings.length - 1;
-            loadDrawing(currentIndex);
-        }
-
-        function wash(e) {
-            const rect = canvas.getBoundingClientRect();
-            
-            // Get coordinates relative to the canvas
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-            
-            // Draw "transparency" to reveal the image underneath
-            ctx.beginPath();
-            ctx.arc(x, y, 30, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Listeners for mouse and touch
-        canvas.addEventListener('mousemove', (e) => { if(e.buttons === 1) wash(e); });
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); wash(e); }, {passive: false});
-        canvas.addEventListener('mousedown', (e) => { wash(e); });
-        canvas.addEventListener('touchstart', (e) => { wash(e); });
-
-        // Handle window resizing to keep the canvas aligned
-        window.addEventListener('resize', () => setupCanvas(drawings[currentIndex].number));
-
-        // Start the first drawing
         loadDrawing(0);
     </script>
 </body>
