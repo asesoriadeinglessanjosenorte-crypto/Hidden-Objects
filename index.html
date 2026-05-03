@@ -1,13 +1,20 @@
-body { 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Water Doodle with Numbers</title>
+    <style>
+        body { 
             background: #1a1a1a; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             height: 100vh; 
             margin: 0; 
-            overflow: hidden;
+            overflow: hidden; 
             font-family: sans-serif;
-            touch-action: none; /* Prevents screen scrolling while doodling */
+            touch-action: none; /* Crucial for mobile: prevents scrolling while drawing */
         }
 
         #main-frame {
@@ -26,7 +33,6 @@ body {
             border: 8px solid #333; 
             border-radius: 8px;
             background: #000;
-            /* Ensures the container never exceeds the screen */
             max-width: 85%; 
             max-height: 90%;
         }
@@ -36,7 +42,7 @@ body {
             width: auto;
             height: auto;
             max-width: 100%;
-            max-height: 85vh; /* Prevents image from pushing arrows off-screen */
+            max-height: 85vh;
             z-index: 1;
         }
 
@@ -44,7 +50,7 @@ body {
             position: absolute; 
             top: 0; 
             left: 0; 
-            width: 100%; /* Important: makes canvas match image size perfectly */
+            width: 100%; 
             height: 100%;
             z-index: 2;
             cursor: crosshair;
@@ -67,15 +73,20 @@ body {
             align-items: center;
             justify-content: center;
             user-select: none;
+            transition: background 0.2s;
         }
 
-        #prevArrow { left: 10px; }
-        #nextArrow { right: 10px; }
+        .nav-arrow:hover {
+            background: #666;
+        }
 
-        /* Fix for horizontal mobile view: Hides the border/frame to save space */
+        #prevArrow { left: 15px; }
+        #nextArrow { right: 15px; }
+
+        /* Mobile Landscape Optimization */
         @media screen and (orientation: landscape) and (max-height: 500px) {
             #canvas-container {
-                border: 2px solid #333;
+                border: 4px solid #333;
                 max-height: 95vh;
             }
             .nav-arrow {
@@ -84,3 +95,97 @@ body {
                 font-size: 1.5rem;
             }
         }
+    </style>
+</head>
+<body>
+
+    <div id="main-frame">
+        <button id="prevArrow" class="nav-arrow" onclick="changePage(-1)">&#10094;</button>
+        
+        <div id="canvas-container">
+            <img src="" id="colorImage" class="bg-img">
+            <canvas id="doodleCanvas"></canvas>
+        </div>
+
+        <button id="nextArrow" class="nav-arrow" onclick="changePage(1)">&#10095;</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('doodleCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorImg = document.getElementById('colorImage');
+
+        const drawings = [
+            { color: 'doodle_color.png', number: "1" },
+            { color: 'doodle2_color.png', number: "2" },
+            { color: 'doodle3_color.png', number: "3" }
+        ];
+
+        let currentIndex = 0;
+
+        function loadDrawing(index) {
+            const drawing = drawings[index];
+            colorImg.src = drawing.color;
+
+            colorImg.onload = function() {
+                const imgW = colorImg.naturalWidth;
+                const imgH = colorImg.naturalHeight;
+
+                canvas.width = imgW;
+                canvas.height = imgH;
+
+                // 1. Draw the white "mask" surface
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, imgW, imgH);
+
+                // 2. Draw the Page Number in the center
+                ctx.fillStyle = "#cccccc"; 
+                ctx.font = `bold ${imgH / 3}px sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(drawing.number, imgW / 2, imgH / 2);
+                
+                // 3. Set to 'erase' mode
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+            };
+        }
+
+        function changePage(direction) {
+            currentIndex += direction;
+            if (currentIndex >= drawings.length) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = drawings.length - 1;
+            loadDrawing(currentIndex);
+        }
+
+        function wash(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 50, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Event Listeners
+        canvas.addEventListener('mousemove', (e) => { if(e.buttons === 1) wash(e); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); wash(e); }, {passive: false});
+        canvas.addEventListener('mousedown', (e) => { wash(e); });
+        canvas.addEventListener('touchstart', (e) => { wash(e); });
+
+        window.addEventListener('dblclick', () => { loadDrawing(currentIndex); });
+
+        // Initialize
+        loadDrawing(0);
+    </script>
+</body>
+</html>
