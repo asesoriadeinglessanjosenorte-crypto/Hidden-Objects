@@ -3,21 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- Meta tags to help hide UI on 'Add to Home Screen' -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>Digital Water Doodle</title>
     <style>
-        :root {
-            --bg-color: #1a1a1a;
-        }
+        :root { --bg-color: #1a1a1a; }
         
         body, html { 
             background: var(--bg-color); 
-            margin: 0; 
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
             overflow: hidden; 
             font-family: sans-serif; 
             touch-action: none; 
@@ -28,8 +23,7 @@
             align-items: center; 
             justify-content: center; 
             width: 100vw; 
-            height: 100vh; /* Fallback */
-            height: 100dvh; /* Dynamic Viewport Height - fills screen perfectly */
+            height: 100dvh; 
         } 
 
         #canvas-container { 
@@ -39,9 +33,7 @@
             border: 4px solid #333; 
             border-radius: 8px; 
             background: #000; 
-            /* Maximize space while leaving room for arrows */
             width: 85%;
-            height: auto;
             max-height: 95%;
         } 
 
@@ -54,10 +46,8 @@
 
         #doodleCanvas { 
             position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
             z-index: 2; 
         } 
 
@@ -70,8 +60,7 @@
             border: 1px solid #555; 
             color: white; 
             font-size: 1.8rem; 
-            width: 44px; 
-            height: 44px; 
+            width: 44px; height: 44px; 
             cursor: pointer; 
             border-radius: 50%; 
             display: flex; 
@@ -82,11 +71,10 @@
         #prevArrow { left: 10px; } 
         #nextArrow { right: 10px; }
 
-        /* The 'Start' overlay helps satisfy browser security for fullscreen */
         #overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             color: white;
             display: flex;
             align-items: center;
@@ -94,14 +82,13 @@
             z-index: 100;
             cursor: pointer;
             text-align: center;
-            padding: 20px;
         }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <h2>Tap to Start Doodle Activity<br><small>(Hides browser bars)</small></h2>
+        <h2>Tap to Start Activity</h2>
     </div>
 
     <div id="main-frame">
@@ -120,18 +107,17 @@
         const overlay = document.getElementById('overlay');
 
         const drawings = [
-            { color: 'doodle_color.png' },
-            { color: 'doodle2_color.png' },
-            { color: 'doodle3_color.png' }
+            { color: 'doodle_color.png', number: "1" },
+            { color: 'doodle2_color.png', number: "2" },
+            { color: 'doodle3_color.png', number: "3" }
         ];
 
         let currentIndex = 0;
 
-        // Force Fullscreen on initial tap
         overlay.addEventListener('click', () => {
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen();
-            } else if (document.documentElement.webkitRequestFullscreen) { /* Safari */
+            } else if (document.documentElement.webkitRequestFullscreen) {
                 document.documentElement.webkitRequestFullscreen();
             }
             overlay.style.display = 'none';
@@ -141,15 +127,26 @@
         function loadDrawing(index) {
             const drawing = drawings[index];
             colorImg.src = drawing.color;
-            colorImg.onload = () => initCanvas();
+            colorImg.onload = () => initCanvas(drawing.number);
         }
 
-        function initCanvas() {
+        function initCanvas(number) {
             canvas.width = colorImg.clientWidth;
             canvas.height = colorImg.clientHeight;
+            
+            // Draw white cover
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the number back in
+            ctx.fillStyle = "#cccccc"; 
+            ctx.font = `bold ${canvas.height / 3}px sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(number, canvas.width / 2, canvas.height / 2);
+            
+            // Set up erase mode
             ctx.globalCompositeOperation = 'destination-out';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
@@ -178,7 +175,11 @@
         canvas.addEventListener('mousedown', wash);
         canvas.addEventListener('touchstart', wash);
 
-        window.addEventListener('resize', initCanvas);
+        window.addEventListener('resize', () => {
+            if (overlay.style.display === 'none') {
+                initCanvas(drawings[currentIndex].number);
+            }
+        });
     </script>
 </body>
 </html>
