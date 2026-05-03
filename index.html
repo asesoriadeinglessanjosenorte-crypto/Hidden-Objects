@@ -109,7 +109,9 @@
         const drawings = [
             { color: 'doodle_color.png', number: "1" },
             { color: 'doodle2_color.png', number: "2" },
-            { color: 'doodle3_color.png', number: "3" }
+            { color: 'doodle3_color.png', number: "3" },
+            { color: 'doodle4_color.png', number: "4" },
+            { color: 'friends5_color.jpeg', number: "5" }
         ];
 
         let currentIndex = 0;
@@ -127,26 +129,34 @@
         function loadDrawing(index) {
             const drawing = drawings[index];
             colorImg.src = drawing.color;
-            colorImg.onload = () => initCanvas(drawing.number);
+
+            // Robust check to ensure image is fully rendered before drawing canvas
+            const checkDimensions = () => {
+                if (colorImg.complete && colorImg.clientWidth > 0) {
+                    initCanvas(drawing.number);
+                } else {
+                    setTimeout(checkDimensions, 10);
+                }
+            };
+            colorImg.onload = checkDimensions;
         }
 
         function initCanvas(number) {
             canvas.width = colorImg.clientWidth;
             canvas.height = colorImg.clientHeight;
             
-            // Draw white cover
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw the number back in
-            ctx.fillStyle = "#cccccc"; 
-            ctx.font = `bold ${canvas.height / 3}px sans-serif`;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(number, canvas.width / 2, canvas.height / 2);
+            if (number) {
+                ctx.fillStyle = "#cccccc"; 
+                ctx.font = `bold ${Math.floor(canvas.height / 3)}px sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(number, canvas.width / 2, canvas.height / 2);
+            }
             
-            // Set up erase mode
             ctx.globalCompositeOperation = 'destination-out';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
