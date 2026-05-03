@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Water Doodle with Numbers</title>
     <style>
+        /* CSS: This handles the layout and the horizontal mobile fix */
         body { 
             background: #1a1a1a; 
             display: flex; 
@@ -14,7 +15,7 @@
             margin: 0; 
             overflow: hidden; 
             font-family: sans-serif;
-            touch-action: none; /* Crucial for mobile: prevents scrolling while drawing */
+            touch-action: none; /* Prevents scrolling while doodling */
         }
 
         #main-frame {
@@ -83,7 +84,7 @@
         #prevArrow { left: 15px; }
         #nextArrow { right: 15px; }
 
-        /* Mobile Landscape Optimization */
+        /* Fix for horizontal mobile view: reduces UI size to maximize drawing space */
         @media screen and (orientation: landscape) and (max-height: 500px) {
             #canvas-container {
                 border: 4px solid #333;
@@ -111,6 +112,7 @@
     </div>
 
     <script>
+        /* JAVASCRIPT: This handles the "washing" effect and page navigation */
         const canvas = document.getElementById('doodleCanvas');
         const ctx = canvas.getContext('2d');
         const colorImg = document.getElementById('colorImage');
@@ -146,7 +148,7 @@
                 ctx.textBaseline = "middle";
                 ctx.fillText(drawing.number, imgW / 2, imgH / 2);
                 
-                // 3. Set to 'erase' mode
+                // 3. Set to 'erase' mode (destination-out)
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.lineJoin = 'round';
                 ctx.lineCap = 'round';
@@ -176,15 +178,16 @@
             ctx.fill();
         }
 
-        // Event Listeners
+        // Mouse and Touch Events
         canvas.addEventListener('mousemove', (e) => { if(e.buttons === 1) wash(e); });
         canvas.addEventListener('touchmove', (e) => { e.preventDefault(); wash(e); }, {passive: false});
         canvas.addEventListener('mousedown', (e) => { wash(e); });
         canvas.addEventListener('touchstart', (e) => { wash(e); });
 
+        // Double click to reset the current page
         window.addEventListener('dblclick', () => { loadDrawing(currentIndex); });
 
-        // Initialize
+        // Start the project with the first image
         loadDrawing(0);
     </script>
 </body>
