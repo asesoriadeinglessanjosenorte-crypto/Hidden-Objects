@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Digital Water Doodle with Numbers</title>
-    <style>
-        body { 
+body { 
             background: #1a1a1a; 
             display: flex; 
             align-items: center; 
@@ -12,6 +7,7 @@
             margin: 0; 
             overflow: hidden;
             font-family: sans-serif;
+            touch-action: none; /* Prevents screen scrolling while doodling */
         }
 
         #main-frame {
@@ -19,27 +15,28 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 90vw; 
-            height: 80vh; 
+            width: 100vw; 
+            height: 100vh; 
         }
 
         #canvas-container { 
             position: relative; 
             line-height: 0;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 10px solid #333; 
+            border: 8px solid #333; 
             border-radius: 8px;
             background: #000;
-            max-width: 100%;
-            max-height: 100%;
+            /* Ensures the container never exceeds the screen */
+            max-width: 85%; 
+            max-height: 90%;
         }
 
         .bg-img { 
             display: block;
-            max-width: 100%;
-            max-height: 80vh;
             width: auto;
             height: auto;
+            max-width: 100%;
+            max-height: 85vh; /* Prevents image from pushing arrows off-screen */
             z-index: 1;
         }
 
@@ -47,10 +44,10 @@
             position: absolute; 
             top: 0; 
             left: 0; 
+            width: 100%; /* Important: makes canvas match image size perfectly */
+            height: 100%;
             z-index: 2;
             cursor: crosshair;
-            max-width: 100%;
-            max-height: 80vh;
         }
 
         .nav-arrow {
@@ -58,118 +55,32 @@
             top: 50%;
             transform: translateY(-50%);
             z-index: 10;
-            background: #444;
+            background: rgba(68, 68, 68, 0.8);
             border: 2px solid #666;
             color: white;
-            font-size: 2.5rem;
-            width: 60px;
-            height: 60px;
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
             cursor: pointer;
             border-radius: 50%;
-            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
+            user-select: none;
         }
 
-        .nav-arrow:hover {
-            background: #666;
-            transform: translateY(-50%) scale(1.1);
+        #prevArrow { left: 10px; }
+        #nextArrow { right: 10px; }
+
+        /* Fix for horizontal mobile view: Hides the border/frame to save space */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            #canvas-container {
+                border: 2px solid #333;
+                max-height: 95vh;
+            }
+            .nav-arrow {
+                width: 40px;
+                height: 40px;
+                font-size: 1.5rem;
+            }
         }
-
-        #prevArrow { left: 0; }
-        #nextArrow { right: 0; }
-    </style>
-</head>
-<body>
-
-    <div id="main-frame">
-        <button id="prevArrow" class="nav-arrow" onclick="changePage(-1)">&#10094;</button>
-        
-        <div id="canvas-container">
-            <img src="" id="colorImage" class="bg-img">
-            <canvas id="doodleCanvas"></canvas>
-        </div>
-
-        <button id="nextArrow" class="nav-arrow" onclick="changePage(1)">&#10095;</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('doodleCanvas');
-        const ctx = canvas.getContext('2d');
-        const colorImg = document.getElementById('colorImage');
-
-        const drawings = [
-            { color: 'doodle_color.png', number: "1" },
-            { color: 'doodle2_color.png', number: "2" },
-            { color: 'doodle3_color.png', number: "3" }
-        ];
-
-        let currentIndex = 0;
-
-        function loadDrawing(index) {
-            const drawing = drawings[index];
-            colorImg.src = drawing.color;
-
-            // Wait for the background image to load so we know the correct dimensions
-            colorImg.onload = function() {
-                const imgW = colorImg.naturalWidth;
-                const imgH = colorImg.naturalHeight;
-
-                canvas.width = imgW;
-                canvas.height = imgH;
-
-                // 1. Draw the white "mask" surface
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, imgW, imgH);
-
-                // 2. Draw the Page Number in the center
-                ctx.fillStyle = "#cccccc"; // Light grey so it's visible but subtle
-                ctx.font = `bold ${imgH / 3}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(drawing.number, imgW / 2, imgH / 2);
-                
-                // 3. Set to 'erase' mode for the user to reveal the image
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineJoin = 'round';
-                ctx.lineCap = 'round';
-            };
-        }
-
-        function changePage(direction) {
-            currentIndex += direction;
-            if (currentIndex >= drawings.length) currentIndex = 0;
-            if (currentIndex < 0) currentIndex = drawings.length - 1;
-            loadDrawing(currentIndex);
-        }
-
-        function wash(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            const x = (clientX - rect.left) * scaleX;
-            const y = (clientY - rect.top) * scaleY;
-            
-            ctx.beginPath();
-            ctx.arc(x, y, 50, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        canvas.addEventListener('mousemove', (e) => { if(e.buttons === 1) wash(e); });
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); wash(e); }, {passive: false});
-        canvas.addEventListener('mousedown', (e) => { wash(e); });
-        canvas.addEventListener('touchstart', (e) => { wash(e); });
-
-        window.addEventListener('dblclick', () => { loadDrawing(currentIndex); });
-
-        // Initialize the first page
-        loadDrawing(0);
-    </script>
-</body>
-</html>
