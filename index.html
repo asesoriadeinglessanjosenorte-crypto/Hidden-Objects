@@ -106,12 +106,12 @@
         const colorImg = document.getElementById('colorImage');
         const overlay = document.getElementById('overlay');
 
+        // Cleaned up array: 4 cartoon-style images
         const drawings = [
             { color: 'doodle_color.png', number: "1" },
             { color: 'doodle2_color.png', number: "2" },
             { color: 'doodle3_color.png', number: "3" },
-            { color: 'doodle4_color.png', number: "4" },
-            { color: 'friends5_color.jpeg', number: "5" }
+            { color: 'doodle4_color.png', number: "4" }
         ];
 
         let currentIndex = 0;
@@ -130,7 +130,6 @@
             const drawing = drawings[index];
             colorImg.src = drawing.color;
 
-            // Robust check to ensure image is fully rendered before drawing canvas
             const checkDimensions = () => {
                 if (colorImg.complete && colorImg.clientWidth > 0) {
                     initCanvas(drawing.number);
