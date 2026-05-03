@@ -14,7 +14,7 @@
             margin: 0; 
             overflow: hidden; 
             font-family: sans-serif; 
-            touch-action: none; /* Prevents screen scrolling while doodling */
+            touch-action: none; 
         } 
 
         #main-frame { 
@@ -33,7 +33,6 @@
             border: 8px solid #333; 
             border-radius: 8px; 
             background: #000; 
-            /* Ensures the container never exceeds the screen */ 
             max-width: 85%; 
             max-height: 90%; 
         } 
@@ -44,7 +43,6 @@
             height: auto; 
             max-width: 100%; 
             max-height: 85vh; 
-            /* Prevents image from pushing arrows off-screen */ 
             z-index: 1; 
         } 
 
@@ -53,7 +51,6 @@
             top: 0; 
             left: 0; 
             width: 100%; 
-            /* Important: makes canvas match image size perfectly */ 
             height: 100%; 
             z-index: 2; 
             cursor: crosshair; 
@@ -81,7 +78,6 @@
         #prevArrow { left: 10px; } 
         #nextArrow { right: 10px; } 
 
-        /* Fix for horizontal mobile view: Hides the border/frame to save space */ 
         @media screen and (orientation: landscape) and (max-height: 500px) { 
             #canvas-container { 
                 border: 2px solid #333; 
@@ -113,7 +109,6 @@
         const ctx = canvas.getContext('2d');
         const colorImg = document.getElementById('colorImage');
 
-        // Update these filenames to match your actual images in GitHub
         const drawings = [
             { color: 'doodle_color.png', number: "1" },
             { color: 'doodle2_color.png', number: "2" },
@@ -126,24 +121,33 @@
             const drawing = drawings[index];
             colorImg.src = drawing.color;
 
+            // Using a slight timeout or waiting for layout to ensure clientWidth is calculated
             colorImg.onload = function() {
-                canvas.width = colorImg.naturalWidth;
-                canvas.height = colorImg.naturalHeight;
-
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = "#cccccc"; 
-                ctx.font = `bold ${canvas.height / 3}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(drawing.number, canvas.width / 2, canvas.height / 2);
-                
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineJoin = 'round';
-                ctx.lineCap = 'round';
+                setupCanvas(drawing.number);
             };
+        }
+
+        function setupCanvas(number) {
+            // Set internal resolution to match displayed size
+            canvas.width = colorImg.clientWidth;
+            canvas.height = colorImg.clientHeight;
+
+            // Fill with "opaque" layer (white)
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the hint number
+            ctx.fillStyle = "#cccccc"; 
+            ctx.font = `bold ${canvas.height / 3}px sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(number, canvas.width / 2, canvas.height / 2);
+            
+            // Set up the "erasing" brush
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
         }
 
         function changePage(direction) {
@@ -155,22 +159,30 @@
 
         function wash(e) {
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
+            
+            // Get coordinates relative to the canvas
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const x = (clientX - rect.left) * scaleX;
-            const y = (clientY - rect.top) * scaleY;
             
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            // Draw "transparency" to reveal the image underneath
             ctx.beginPath();
-            ctx.arc(x, y, 50, 0, Math.PI * 2);
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
             ctx.fill();
         }
 
+        // Listeners for mouse and touch
         canvas.addEventListener('mousemove', (e) => { if(e.buttons === 1) wash(e); });
         canvas.addEventListener('touchmove', (e) => { e.preventDefault(); wash(e); }, {passive: false});
         canvas.addEventListener('mousedown', (e) => { wash(e); });
         canvas.addEventListener('touchstart', (e) => { wash(e); });
+
+        // Handle window resizing to keep the canvas aligned
+        window.addEventListener('resize', () => setupCanvas(drawings[currentIndex].number));
+
+        // Start the first drawing
         loadDrawing(0);
     </script>
 </body>
